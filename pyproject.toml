@@ -1,0 +1,109 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "odoo-sort-manifest-depends"
+dynamic = ["version"]
+description = "Sort modules dependencies section in odoo addon's manifest"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "AnizR"},
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "click",
+]
+
+[project.urls]
+Documentation = "https://github.com/acsone/odoo-sort-manifest-depends#readme"
+Issues = "https://github.com/acsone/odoo-sort-manifest-depends/issues"
+Source = "https://github.com/acsone/odoo-sort-manifest-depends"
+
+[project.scripts]
+checklog-odoo = "odoo_sort_manifest_depends.sort_manifest_deps:sort_manifest_deps"
+
+###################################################################################
+# ruff
+#
+
+[tool.ruff]
+target-version = "py37"
+line-length = 120
+fix = true
+
+[tool.ruff.lint]
+select = [
+  "A",
+  "ARG",
+  "B",
+  "C",
+  "DTZ",
+  "E",
+  "EM",
+  "F",
+  "FBT",
+  "I",
+  "ICN",
+  "ISC",
+  "N",
+  "PLC",
+  "PLE",
+  "PLR",
+  "PLW",
+  "Q",
+  "RUF",
+  "S",
+  "T",
+  "TID",
+  "UP",
+  "W",
+  "YTT",
+]
+ignore = []
+unfixable = [
+  # Don't touch unused imports
+  "F401",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["checklog_odoo"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests can use magic values, assertions, and relative imports
+"tests/**/*" = ["PLR2004", "S101"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.coverage.run]
+source_pkgs = ["odoo_sort_manifest_depends", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/odoo_sort_manifest_depends/__about__.py",
+]
+
+[tool.coverage.paths]
+odoo_sort_manifest_depends = ["src/odoo_sort_manifest_depends", "*/odoo-sort-manifest-depends/src/odoo_sort_manifest_depends"]
+tests = ["tests", "*/odoo-sort-manifest-depends/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
