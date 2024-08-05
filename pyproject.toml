@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 license = "MIT"
 keywords = []
 authors = [
-  { name = "AnizR"},
+  { name = "Acsone"},
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
