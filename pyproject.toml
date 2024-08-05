@@ -33,7 +33,7 @@ Issues = "https://github.com/acsone/odoo-sort-manifest-depends/issues"
 Source = "https://github.com/acsone/odoo-sort-manifest-depends"
 
 [project.scripts]
-odoo-sort-manifest-deps = "odoo_sort_manifest_depends.sort_manifest_deps:sort_manifest_deps"
+odoo-sort-manifest-depends = "odoo_sort_manifest_depends.sort_manifest_deps:sort_manifest_deps"
 
 ###################################################################################
 # ruff

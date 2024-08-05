@@ -9,7 +9,7 @@
 ## Help
 
 ```
-Usage: odoo-sort-manifest-deps [OPTIONS]
+Usage: odoo-sort-manifest-depends [OPTIONS]
 
   Sort modules dependencies section in odoo addons manifests
 
