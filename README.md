@@ -40,7 +40,7 @@ Options:
 
 ## Credits
 
- * [Laurant Mignon](https://github.com/lmignon)
+ * [Laurent Mignon](https://github.com/lmignon)
  * [Thomas Binsfeld](https://github.com/ThomasBinsfeld)
  * [Zina Rasoamanana](https://github.com/AnizR)
 
