@@ -91,7 +91,7 @@ def do_sorting(addons_dir, odoo_version, project_name):
         categories = {
             "Odoo Community": odoo_ce,
             "Odoo Enterprise": odoo_ee,
-            "Others (OCA,Shopinvader,...)": other,
+            "Third-party": other,
         }
 
         categories.update(local_categories)

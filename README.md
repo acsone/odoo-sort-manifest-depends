@@ -1,22 +1,30 @@
 # odoo-sort-manifest-depends
 
-[![PyPI - Version](https://img.shields.io/pypi/v/odoo-sort-manifest-depends.svg)](https://pypi.org/project/odoo-sort-manifest-depends)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/odoo-sort-manifest-depends.svg)](https://pypi.org/project/odoo-sort-manifest-depends)
-
------
-
 ## Table of Contents
 
-- [Installation](#installation)
+- [Help](#help)
+- [Pre-commit hook](#pre-commit)
 - [License](#license)
 
-## Installation
+## Help
 
-```console
-pip install odoo-sort-manifest-depends
+```
+odoo-sort-manifest-deps --help
+Usage: odoo-sort-manifest-deps [OPTIONS]
+
+  Sort modules dependencies section in odoo addon's manifest
+
+Options:
+  --local-addons-dir DIRECTORY  Repository containing manifests to sort
+                                [required]
+  --odoo-version TEXT           Project's Odoo version (e.g. 16.0)  [required]
+  --project-name TEXT           Name of the project, will be the name of
+                                category of local addons
+  --help                        Show this message and exit.
 ```
 
-## Pre-commit hook
+
+## Pre-commit
 
 ```yaml
   - repo: https://github.com/acsone/odoo-sort-manifest-depends
