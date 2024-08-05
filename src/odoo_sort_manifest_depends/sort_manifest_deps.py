@@ -74,8 +74,7 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
         odoo_ce, odoo_ee, other = sorted(odoo_ce), sorted(odoo_ee), sorted(other)
 
         manifest_path = addon_obj.manifest_path
-        with open(manifest_path) as f:
-            content = f.read()
+        content = manifest_path.read_text()
 
         local_categories = {}
         for cat, addon_names in custom_by_category.items():
@@ -96,8 +95,7 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
 
         pattern = r'"depends":\s*\[([^]]*)\]'
         content = sub(pattern, new_depends, content, flags=DOTALL)
-        with open(manifest_path, "w") as f:
-            f.write(content)
+        manifest_path.write_text(content)
 
 
 @command(help="Sort modules dependencies section in odoo addons manifests")
