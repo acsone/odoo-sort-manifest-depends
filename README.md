@@ -22,12 +22,21 @@ Options:
   --help                        Show this message and exit.
 ```
 
+## Using from the command line
 
-## Pre-commit
+This project is distributed on PyPI. The recommended way to run it is with
+[pipx](https://github.com/pypa/pipx), with a command like this:
+
+`pipx run odoo-sort-manifest-depends --local-addons-dir=odoo/addons --odoo-version=16.0`
+
+## Using with pre-commit
+
+This project may be used as a [pre-commit](https://pre-commit.com) hook, with an
+entry like this in `.pre-commit-config.yml`.
 
 ```yaml
   - repo: https://github.com/acsone/odoo-sort-manifest-depends
-    rev: v1.1
+    rev: v1.x  # see the release page https://github.com/acsone/odoo-sort-manifest-depends/releases
     hooks:
       - id: odoo-sort-manifest-depends
         args:
@@ -46,4 +55,5 @@ Options:
 
 ## License
 
-`odoo-sort-manifest-depends` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+`odoo-sort-manifest-depends` is distributed under the terms of the
+[MIT](https://spdx.org/licenses/MIT.html) license.
