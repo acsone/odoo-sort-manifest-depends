@@ -71,7 +71,9 @@ select = [
   "W",
   "YTT",
 ]
-ignore = []
+ignore = [
+  "S101",
+]
 unfixable = [
   # Don't touch unused imports
   "F401",

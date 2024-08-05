@@ -51,6 +51,9 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
     for addon_obj in local_addons.values():
         dependencies = addon_obj.manifest.depends
 
+        if not dependencies:
+            continue
+
         odoo_ce, odoo_ee, other = [], [], []
         custom_by_category: dict[str, list[str]] = {}
         for dep in dependencies:
@@ -66,8 +69,7 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
             else:
                 other.append(dep)
 
-        if not (custom_by_category or odoo_ce or odoo_ee or other):
-            continue
+        assert custom_by_category or odoo_ce or odoo_ee or other
 
         odoo_ce, odoo_ee, other = sorted(odoo_ce), sorted(odoo_ee), sorted(other)
 
@@ -90,10 +92,10 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
 
         categories.update(local_categories)
 
-        new_content = _generate_depends_sections(categories)
+        new_depends = _generate_depends_sections(categories)
 
         pattern = r'"depends":\s*\[([^]]*)\]'
-        content = sub(pattern, new_content, content, flags=DOTALL)
+        content = sub(pattern, new_depends, content, flags=DOTALL)
         with open(manifest_path, "w") as f:
             f.write(content)
 
