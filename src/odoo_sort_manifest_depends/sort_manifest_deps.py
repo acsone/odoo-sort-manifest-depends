@@ -2,23 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
-from os import listdir
-from os.path import join
 from pathlib import Path
 from re import DOTALL, sub
 
-from click import Path as click_Path
+import click
 from click import command, option
 from manifestoo_core.addon import Addon, is_addon_dir
 from manifestoo_core.core_addons import is_core_ce_addon, is_core_ee_addon
 from manifestoo_core.odoo_series import OdooSeries
 
-MANIFEST_NAMES = ("__manifest__.py", "__openerp__.py", "__terp__.py")
-
 NAME_DEFAULT_CATEGORY = "Default"
 
 
-def _generate_depends_sections(dict_depends_by_cateogry):
+def _generate_depends_sections(dict_depends_by_cateogry: dict[str, list[str]]) -> str:
     new_content = '"depends": ['
     for category, deps in dict_depends_by_cateogry.items():
         if deps:
@@ -28,19 +24,17 @@ def _generate_depends_sections(dict_depends_by_cateogry):
     return new_content
 
 
-def _generate_dict_addons_obj(addons_dir):
-    addons = listdir(addons_dir)
+def _get_addons_by_name(addons_dir: Path) -> dict[str, Addon]:
     local_addons = {}
-    for addon_name in addons:
-        addon_dir = Path(join(addons_dir, addon_name))
+    for addon_dir in addons_dir.iterdir():
         if not is_addon_dir(addon_dir, allow_not_installable=False):
             continue
         addon_obj = Addon.from_addon_dir(addon_dir, allow_not_installable=False)
-        local_addons[addon_name] = addon_obj
+        local_addons[addon_dir.name] = addon_obj
     return local_addons
 
 
-def do_sorting(addons_dir, odoo_version, project_name):
+def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
     """
     Update manifest files to sort dependencies by typa and then by name.
 
@@ -52,17 +46,17 @@ def do_sorting(addons_dir, odoo_version, project_name):
     """
     odoo_version = OdooSeries(odoo_version)
 
-    local_addons = _generate_dict_addons_obj(addons_dir)
+    local_addons = _get_addons_by_name(addons_dir)
 
     for addon_obj in local_addons.values():
         dependencies = addon_obj.manifest.depends
 
         odoo_ce, odoo_ee, other = [], [], []
-        custom_by_category = {}
+        custom_by_category: dict[str, list[str]] = {}
         for dep in dependencies:
-            if local_addons.get(dep):
+            if dep_addon_obj := local_addons.get(dep):
                 addons_in_category = custom_by_category.setdefault(
-                    local_addons.get(dep).manifest.manifest_dict.get("category", NAME_DEFAULT_CATEGORY), []
+                    dep_addon_obj.manifest.manifest_dict.get("category", NAME_DEFAULT_CATEGORY), []
                 )
                 addons_in_category.append(dep)
             elif is_core_ce_addon(dep, odoo_version):
@@ -107,7 +101,7 @@ def do_sorting(addons_dir, odoo_version, project_name):
 @command(help="Sort modules dependencies section in odoo addons manifests")
 @option(
     "--local-addons-dir",
-    type=click_Path(file_okay=False),
+    type=click.Path(file_okay=False),
     required=True,
     help="Directory containing manifests to sort",
 )
@@ -123,5 +117,5 @@ def do_sorting(addons_dir, odoo_version, project_name):
     help="Name of the project, will be the name of category of local addons (default: Local)",
     default="Local",
 )
-def sort_manifest_deps(local_addons_dir, odoo_version, project_name):
-    do_sorting(local_addons_dir, odoo_version, project_name)
+def sort_manifest_deps(local_addons_dir: str, odoo_version: str, project_name: str) -> None:
+    do_sorting(Path(local_addons_dir), odoo_version, project_name)
