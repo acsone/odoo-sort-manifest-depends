@@ -27,7 +27,7 @@ Options:
 
 ```yaml
   - repo: https://github.com/acsone/odoo-sort-manifest-depends
-    rev: v1.0
+    rev: v1.1
     hooks:
       - id: odoo-sort-manifest-depends
         args:
@@ -37,6 +37,11 @@ Options:
             --project-name=MyProject,
           ]
 ```
+
+## Credits
+
+ * @lmignon
+ * @ThomasBinsfeld
 
 ## License
 
