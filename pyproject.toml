@@ -26,6 +26,7 @@ classifiers = [
 ]
 dependencies = [
   "click",
+  "manifestoo_core",
 ]
 
 [project.urls]
@@ -34,7 +35,7 @@ Issues = "https://github.com/acsone/odoo-sort-manifest-depends/issues"
 Source = "https://github.com/acsone/odoo-sort-manifest-depends"
 
 [project.scripts]
-checklog-odoo = "odoo_sort_manifest_depends.sort_manifest_deps:sort_manifest_deps"
+odoo-sort-manifest-deps = "odoo_sort_manifest_depends.sort_manifest_deps:sort_manifest_deps"
 
 ###################################################################################
 # ruff
@@ -80,7 +81,7 @@ unfixable = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["checklog_odoo"]
+known-first-party = ["odoo_sort_manifest_deps"]
 
 [tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports

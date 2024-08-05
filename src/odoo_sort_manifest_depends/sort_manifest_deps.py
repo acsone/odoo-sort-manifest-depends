@@ -2,47 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-import re
-from ast import literal_eval
+from os import listdir
+from os.path import join
+from pathlib import Path
+from re import DOTALL, sub
 
-import click
+from click import Path as click_Path
+from click import command, option
+from manifestoo_core.addon import Addon, is_addon_dir
+from manifestoo_core.core_addons import is_core_ce_addon, is_core_ee_addon
+from manifestoo_core.odoo_series import OdooSeries
 
 MANIFEST_NAMES = ("__manifest__.py", "__openerp__.py", "__terp__.py")
-
-
-class NoManifestFoundError(Exception):
-    pass
-
-
-def _get_manifest_path(addon_dir):
-    for manifest_name in MANIFEST_NAMES:
-        manifest_path = os.path.join(addon_dir, manifest_name)
-        if os.path.isfile(manifest_path):
-            return manifest_path
-
-
-def _read_manifest(addon_dir):
-    manifest_path = _get_manifest_path(addon_dir)
-    if not manifest_path:
-        msg = f"No Odoo manifest found in {addon_dir}"
-        raise NoManifestFoundError(msg)
-    with open(manifest_path) as mf:
-        return literal_eval(mf.read())
-
-
-def _get_oca_addon_in_requirements(requirement_file):
-    """
-    Return the addon names in the requirements file.
-    """
-    oca_addons = []
-    with open(requirement_file) as f:
-        for line in f:
-            if regex_match := re.search(r"^odoo-addon-(.*?)(?:==| @)", line):
-                module_name = regex_match.group(1)
-                module_name = module_name.replace("-", "_")
-                oca_addons.append(module_name)
-    return oca_addons
 
 
 def _generate_depends_sections(dict_depends_by_cateogry):
@@ -55,72 +26,74 @@ def _generate_depends_sections(dict_depends_by_cateogry):
     return new_content
 
 
-def do_sorting(addons_dir, requirements_file):
+def do_sorting(addons_dir, odoo_version):
     """
     Update manifest files to sort dependencies by typa and then by name.
 
     This script will sort the dependencies of all manifest files in the given
-    directory. We'll get 3 groups of dependencies: Custom, OCA and Others.
+    directory. We'll get 4 groups of dependencies:
+        Custom, Odoo community, Odoo enterprise and Others.
 
     The script will also exclude not installable addons from the dependencies.
     """
-    oca_addons = _get_oca_addon_in_requirements(requirements_file)
-    addons = os.listdir(addons_dir or ".")
-    for addon in addons:
-        addon_dir = os.path.join(addons_dir, addon)
-        try:
-            manifest = _read_manifest(addon_dir)
-        except NoManifestFoundError:
+    odoo_version = OdooSeries(odoo_version)
+    addons = listdir(addons_dir)
+    for addon_name in addons:
+        addon_dir = Path(join(addons_dir, addon_name))
+
+        if not is_addon_dir(addon_dir, allow_not_installable=False):
             continue
 
-        if not manifest.get("installable", True):
-            continue
-        dependencies = manifest.get("depends", [])
+        addon_obj = Addon.from_addon_dir(addon_dir, allow_not_installable=False)
+        dependencies = addon_obj.manifest.depends
 
-        custom, oca, other = [], [], []
+        odoo_ce, odoo_ee, other, custom = [], [], [], []
         for dep in dependencies:
             if dep in addons:
                 custom.append(dep)
-            elif dep in oca_addons:
-                oca.append(dep)
+            elif is_core_ce_addon(dep, odoo_version):
+                odoo_ce.append(dep)
+            elif is_core_ee_addon(dep, odoo_version):
+                odoo_ee.append(dep)
             else:
                 other.append(dep)
 
-        if not (custom or oca or other):
+        if not (custom or odoo_ce or odoo_ee or other):
             continue
 
-        custom, oca, other = sorted(custom), sorted(oca), sorted(other)
+        custom, odoo_ce, odoo_ee, other = sorted(custom), sorted(odoo_ce), sorted(odoo_ee), sorted(other)
 
-        manifest_path = _get_manifest_path(addon_dir)
+        manifest_path = addon_obj.manifest_path
         with open(manifest_path) as f:
             content = f.read()
 
         categories = {
-            "Custom": custom,
-            "OCA": oca,
-            "Others": other,
+            "Odoo Community": odoo_ce,
+            "Odoo Enterprise": odoo_ee,
+            "Others (OCA,Shopinvader,...)": other,
+            "Local": custom,
         }
 
         new_content = _generate_depends_sections(categories)
 
         pattern = r'"depends":\s*\[([^]]*)\]'
-        content = re.sub(pattern, new_content, content, flags=re.DOTALL)
+        content = sub(pattern, new_content, content, flags=DOTALL)
         with open(manifest_path, "w") as f:
             f.write(content)
 
 
-@click.command(help="Sort modules dependencies section in odoo addon's manifest")
-@click.option(
-    "--requirements-file",
-    type=click.Path(dir_okay=False),
-    required=True,
-    help="Requirements file to use to identify addons",
-)
-@click.option(
-    "--addons-dir",
-    type=click.Path(file_okay=False),
+@command(help="Sort modules dependencies section in odoo addon's manifest")
+@option(
+    "--local-addons-dir",
+    type=click_Path(file_okay=False),
     required=True,
     help="Repository containing manifests to sort",
 )
-def sort_manifest_deps(requirements_file, addons_dir):
-    do_sorting(addons_dir, requirements_file)
+@option(
+    "--odoo-version",
+    type=str,
+    required=True,
+    help="Project's Odoo version (e.g. 16.0)",
+)
+def sort_manifest_deps(local_addons_dir, odoo_version):
+    do_sorting(local_addons_dir, odoo_version)
