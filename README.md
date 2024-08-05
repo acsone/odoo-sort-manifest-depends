@@ -9,17 +9,16 @@
 ## Help
 
 ```
-odoo-sort-manifest-deps --help
 Usage: odoo-sort-manifest-deps [OPTIONS]
 
-  Sort modules dependencies section in odoo addon's manifest
+  Sort modules dependencies section in odoo addons manifests
 
 Options:
-  --local-addons-dir DIRECTORY  Repository containing manifests to sort
+  --local-addons-dir DIRECTORY  Directory containing manifests to sort
                                 [required]
   --odoo-version TEXT           Project's Odoo version (e.g. 16.0)  [required]
   --project-name TEXT           Name of the project, will be the name of
-                                category of local addons
+                                category of local addons (default: Local)
   --help                        Show this message and exit.
 ```
 
@@ -28,7 +27,7 @@ Options:
 
 ```yaml
   - repo: https://github.com/acsone/odoo-sort-manifest-depends
-    rev: master
+    rev: v1.0
     hooks:
       - id: odoo-sort-manifest-depends
         args:

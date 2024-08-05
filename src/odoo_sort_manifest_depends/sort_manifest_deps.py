@@ -104,12 +104,12 @@ def do_sorting(addons_dir, odoo_version, project_name):
             f.write(content)
 
 
-@command(help="Sort modules dependencies section in odoo addon's manifest")
+@command(help="Sort modules dependencies section in odoo addons manifests")
 @option(
     "--local-addons-dir",
     type=click_Path(file_okay=False),
     required=True,
-    help="Repository containing manifests to sort",
+    help="Directory containing manifests to sort",
 )
 @option(
     "--odoo-version",
@@ -120,7 +120,7 @@ def do_sorting(addons_dir, odoo_version, project_name):
 @option(
     "--project-name",
     type=str,
-    help="Name of the project, will be the name of category of local addons",
+    help="Name of the project, will be the name of category of local addons (default: Local)",
     default="Local",
 )
 def sort_manifest_deps(local_addons_dir, odoo_version, project_name):
