@@ -1,6 +1,5 @@
 -   id: odoo-sort-manifest-depends
     name: Sorting depends of odoo addons manifests
-    description: Sorting alphabetically depends of odoo addons manifests
     entry: odoo-sort-manifest-depends
     language: python
     pass_filenames: False
