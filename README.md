@@ -39,12 +39,14 @@ entry like this in `.pre-commit-config.yml`.
     rev: v1.x  # see the release page https://github.com/acsone/odoo-sort-manifest-depends/releases
     hooks:
       - id: odoo-sort-manifest-depends
+        name: Sort Odoo Manifest Depends
         args:
           [
             --local-addons-dir=./odoo/addons/,
             --odoo-version=16.0,
             --project-name=MyProject,
           ]
+        files: odoo/addons/.*/__manifest__.py
 ```
 
 ## Credits
