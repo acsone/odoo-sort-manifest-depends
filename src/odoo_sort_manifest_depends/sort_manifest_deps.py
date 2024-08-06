@@ -36,11 +36,11 @@ def _get_addons_by_name(addons_dir: Path) -> dict[str, Addon]:
 
 def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
     """
-    Update manifest files to sort dependencies by typa and then by name.
+    Update manifest files to sort dependencies by type, category and then by name.
 
     This script will sort the dependencies of all manifest files in the given
-    directory. We'll get 4 groups of dependencies:
-        Custom, Odoo community, Odoo enterprise and Others.
+    directory. We'll get the following groups of dependencies:
+        Third-party, Odoo Community, Odoo Enterprise, Local/{module_category}
 
     The script will also exclude not installable addons from the dependencies.
     """
@@ -98,7 +98,10 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
         manifest_path.write_text(content)
 
 
-@command(help="Sort modules dependencies section in odoo addons manifests")
+@command(
+    help="Sort modules dependencies section in odoo addons manifests and group them by"
+    " type (Third-party, Odoo Community, Odoo Enterprise, Local) and module category."
+)
 @option(
     "--local-addons-dir",
     type=click.Path(file_okay=False),

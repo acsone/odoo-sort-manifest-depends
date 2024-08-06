@@ -11,7 +11,9 @@
 ```
 Usage: odoo-sort-manifest-depends [OPTIONS]
 
-  Sort modules dependencies section in odoo addons manifests
+  Sort modules dependencies section in odoo addons manifests and group them by
+  type (Third-party, Odoo Community, Odoo Enterprise, Local) and module
+  category.
 
 Options:
   --local-addons-dir DIRECTORY  Directory containing manifests to sort
