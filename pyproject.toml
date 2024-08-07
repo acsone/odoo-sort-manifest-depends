@@ -24,7 +24,10 @@ classifiers = [
 ]
 dependencies = [
   "click",
-  "manifestoo_core",
+  "manifestoo_core>=1.1",
+  "diskcache",
+  "requests",
+  "platformdirs",
 ]
 
 [project.urls]
