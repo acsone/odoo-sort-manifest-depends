@@ -89,6 +89,7 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
             "Third-party": other,
         }
 
+        local_categories = dict(sorted(local_categories.items()))
         categories.update(local_categories)
 
         new_depends = _generate_depends_sections(categories)
