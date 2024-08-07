@@ -21,6 +21,8 @@ Options:
   --odoo-version TEXT           Project's Odoo version (e.g. 16.0)  [required]
   --project-name TEXT           Name of the project, will be the name of
                                 category of local addons (default: Local)
+  --distinct-oca                Add disctinction for third party addons coming
+                                from OCA
   --help                        Show this message and exit.
 ```
 

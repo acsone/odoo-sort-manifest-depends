@@ -7,11 +7,18 @@ from re import DOTALL, sub
 
 import click
 from click import command, option
+from diskcache import Cache
 from manifestoo_core.addon import Addon, is_addon_dir
 from manifestoo_core.core_addons import is_core_ce_addon, is_core_ee_addon
+from manifestoo_core.metadata import addon_name_to_distribution_name
 from manifestoo_core.odoo_series import OdooSeries
+from requests import head
 
 NAME_DEFAULT_CATEGORY = "Default"
+OCA_ADDON_URL = "https://wheelhouse.odoo-community.org/oca-simple/"
+REQUEST_TIMEOUT = 2  # s
+
+other_addons_category_cache = Cache("~/.cache/odoo-sort-manifest-depends")
 
 
 def _generate_depends_sections(dict_depends_by_cateogry: dict[str, list[str]]) -> str:
@@ -34,7 +41,30 @@ def _get_addons_by_name(addons_dir: Path) -> dict[str, Addon]:
     return local_addons
 
 
-def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
+def _identify_oca_addons(addon_names: list[str], odoo_series: OdooSeries) -> tuple[list[str], list[str]]:
+    oca_addons, other_addons = [], []
+
+    with other_addons_category_cache as cache:
+        for addon_name in addon_names:
+            if category := cache.get(addon_name):
+                if category == "oca":
+                    oca_addons.append(addon_name)
+                else:
+                    other_addons.append(addon_name)
+            else:
+                distribution_name = addon_name_to_distribution_name(addon_name.replace("_", "-"), odoo_series)
+                res = head(f"{OCA_ADDON_URL}{distribution_name}", timeout=REQUEST_TIMEOUT)
+                if res:
+                    cache[addon_name] = "oca"
+                    oca_addons.append(addon_name)
+                else:
+                    cache[addon_name] = "other"
+                    other_addons.append(addon_name)
+
+    return oca_addons, other_addons
+
+
+def do_sorting(addons_dir: Path, odoo_version: str, project_name: str, *, oca_category: bool) -> None:
     """
     Update manifest files to sort dependencies by type, category and then by name.
 
@@ -44,7 +74,7 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
 
     The script will also exclude not installable addons from the dependencies.
     """
-    odoo_version = OdooSeries(odoo_version)
+    odoo_series = OdooSeries(odoo_version)
 
     local_addons = _get_addons_by_name(addons_dir)
 
@@ -62,9 +92,9 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
                     dep_addon_obj.manifest.manifest_dict.get("category", NAME_DEFAULT_CATEGORY), []
                 )
                 addons_in_category.append(dep)
-            elif is_core_ce_addon(dep, odoo_version):
+            elif is_core_ce_addon(dep, odoo_series):
                 odoo_ce.append(dep)
-            elif is_core_ee_addon(dep, odoo_version):
+            elif is_core_ee_addon(dep, odoo_series):
                 odoo_ee.append(dep)
             else:
                 other.append(dep)
@@ -83,12 +113,20 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
             else:
                 local_categories[f"{project_name}/{cat}"] = sorted(addon_names)
 
+        # Odoo
         categories = {
             "Odoo Community": odoo_ce,
             "Odoo Enterprise": odoo_ee,
-            "Third-party": other,
         }
 
+        # Third party
+        if oca_category:
+            oca, other = _identify_oca_addons(other, odoo_series)
+            categories["OCA"] = oca
+
+        categories["Third-party"] = other
+
+        # Local
         local_categories = dict(sorted(local_categories.items()))
         categories.update(local_categories)
 
@@ -121,5 +159,25 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str) -> None:
     help="Name of the project, will be the name of category of local addons (default: Local)",
     default="Local",
 )
-def sort_manifest_deps(local_addons_dir: str, odoo_version: str, project_name: str) -> None:
-    do_sorting(Path(local_addons_dir), odoo_version, project_name)
+@option(
+    "--oca-category",
+    is_flag=True,
+    help="Add category for third party addons coming from OCA",
+)
+@option(
+    "--reset-cache",
+    is_flag=True,
+    help="Purge cache used to identify OCA addons",
+)
+def sort_manifest_deps(
+    local_addons_dir: str,
+    odoo_version: str,
+    project_name: str,
+    *,
+    oca_category: bool = False,
+    reset_cache: bool = False,
+) -> None:
+    if reset_cache:
+        other_addons_category_cache.clear()
+
+    do_sorting(Path(local_addons_dir), odoo_version, project_name, oca_category=oca_category)
