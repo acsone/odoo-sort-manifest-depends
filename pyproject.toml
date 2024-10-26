@@ -28,6 +28,8 @@ dependencies = [
   "diskcache",
   "requests",
   "platformdirs",
+  "packaging",
+  "mousebender",
 ]
 
 [project.urls]
