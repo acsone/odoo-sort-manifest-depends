@@ -62,9 +62,9 @@ def _identify_oca_addons(addon_names: list[str], odoo_series: OdooSeries) -> tup
                 res = requests.head(f"{OCA_ADDONS_INDEX_URL}{distribution_name}", timeout=REQUEST_TIMEOUT)
                 if res:
                     category = get_oca_repository_name(addon_name, odoo_series) or DEFAULT_OCA_CATEGORY
+                    cache[addon_name] = category
                 else:
                     category = "other"
-                cache[addon_name] = category
 
             if category == "other":
                 other_addons.append(addon_name)
