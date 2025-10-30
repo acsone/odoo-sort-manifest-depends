@@ -21,7 +21,13 @@ Options:
   --odoo-version TEXT           Project's Odoo version (e.g. 16.0)  [required]
   --project-name TEXT           Name of the project, will be the name of
                                 category of local addons (default: Local)
-  --oca-category                Add category for third party addons coming from OCA
+  --oca-category [basic|repository]
+                                Add category for third party addons coming
+                                from OCA. If 'basic': category is set to
+                                'OCA'. If 'repository': category is set as
+                                'OCA/<repository_name>', if the repository
+                                can not be identified, it falls into the
+                                default 'OCA' category.
   --reset-cache                 Purge cache used to identify OCA addons
   --help                        Show this message and exit.
 ```

@@ -2,24 +2,32 @@
 #
 # SPDX-License-Identifier: MIT
 
+import re
 from pathlib import Path
-from re import DOTALL, sub
 
 import click
+import requests
 from click import command, option
 from diskcache import Cache
 from manifestoo_core.addon import Addon, is_addon_dir
 from manifestoo_core.core_addons import is_core_ce_addon, is_core_ee_addon
 from manifestoo_core.metadata import addon_name_to_distribution_name
 from manifestoo_core.odoo_series import OdooSeries
+from mousebender import simple
+from packaging.metadata import parse_email
+from packaging.specifiers import SpecifierSet
+from packaging.utils import parse_wheel_filename
 from platformdirs import user_cache_dir
-from requests import head
 
 NAME_DEFAULT_CATEGORY = "Default"
 OCA_ADDONS_INDEX_URL = "https://wheelhouse.odoo-community.org/oca-simple/"
 REQUEST_TIMEOUT = 2  # s
 
-other_addons_category_cache = Cache(user_cache_dir("odoo-sort-manifest-depends", "Acsone"))
+PYPI_SIMPLE_INDEX_URL = "https://pypi.org/simple/"
+PAGE_NOT_FOUND = 404
+DEFAULT_OCA_CATEGORY = "OCA"
+
+other_addons_category_cache = Cache(user_cache_dir("odoo-sort-manifest-depends", "Acsone", "1.0"))
 
 
 def _generate_depends_sections(dict_depends_by_cateogry: dict[str, list[str]]) -> str:
@@ -42,8 +50,8 @@ def _get_addons_by_name(addons_dir: Path) -> dict[str, Addon]:
     return local_addons
 
 
-def _identify_oca_addons(addon_names: list[str], odoo_series: OdooSeries) -> tuple[list[str], list[str]]:
-    oca_addons, other_addons = [], []
+def _identify_oca_addons(addon_names: list[str], odoo_series: OdooSeries) -> tuple[dict[str, list[str]], list[str]]:
+    oca_addons_by_category, other_addons = {}, []
 
     with other_addons_category_cache as cache:
         for addon_name in addon_names:
@@ -51,22 +59,77 @@ def _identify_oca_addons(addon_names: list[str], odoo_series: OdooSeries) -> tup
 
             if not category:
                 distribution_name = addon_name_to_distribution_name(addon_name, odoo_series).replace("_", "-")
-                res = head(f"{OCA_ADDONS_INDEX_URL}{distribution_name}", timeout=REQUEST_TIMEOUT)
+                res = requests.head(f"{OCA_ADDONS_INDEX_URL}{distribution_name}", timeout=REQUEST_TIMEOUT)
                 if res:
-                    category = "oca"
+                    category = get_oca_repository_name(addon_name, odoo_series) or DEFAULT_OCA_CATEGORY
+                    cache[addon_name] = category
                 else:
                     category = "other"
-                cache[addon_name] = category
 
-            if category == "oca":
-                oca_addons.append(addon_name)
-            else:
+            if category == "other":
                 other_addons.append(addon_name)
+            else:
+                oca_addons_by_category.setdefault(category, []).append(addon_name)
 
-    return oca_addons, other_addons
+    return oca_addons_by_category, other_addons
 
 
-def do_sorting(addons_dir: Path, odoo_version: str, project_name: str, *, oca_category: bool) -> None:
+def get_oca_repository_name(addon_name: str, odoo_series: OdooSeries) -> str | None:
+    specifier = SpecifierSet(f"=={odoo_series.value}.*")
+    distribution_name = addon_name_to_distribution_name(addon_name, odoo_series)
+    # get avaialble releases
+    project_url = simple.create_project_url(PYPI_SIMPLE_INDEX_URL, distribution_name)
+    response = requests.get(project_url, headers={"Accept": simple.ACCEPT_JSON_V1}, timeout=REQUEST_TIMEOUT)
+    if response.status_code == PAGE_NOT_FOUND:
+        # project not found
+        return None
+    response.raise_for_status()
+    content_type = response.headers["Content-Type"]
+    project_details = simple.parse_project_details(response.text, content_type, distribution_name)
+    # find the first version that matches the requested Odoo version;
+    # we assume all releases come from the same repo for a given Odoo series
+    for file in project_details["files"]:
+        if file.get("yanked"):
+            continue
+        filename = file["filename"]
+        if not filename.endswith(".whl"):
+            continue
+        _, version, _, _ = parse_wheel_filename(filename)
+        if specifier.contains(version, prereleases=True):
+            # found a release that matches the requested Odoo version
+            break
+    else:
+        # no release found that matches the requested Odoo version
+        return None
+
+    if not file.get("data-dist-info-metadata"):
+        return None
+    metadata_url = file["url"] + ".metadata"
+    response = requests.get(metadata_url, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    home_page = re.search("OCA/.*", parse_email(response.text)[0].get("home_page"))
+
+    return home_page.group() if home_page else None
+
+
+def _add_oca_categories(
+    categories: dict[str, list[str]], other: list[str], odoo_series: OdooSeries, oca_category: str
+) -> tuple[dict[str, list[str]], list[str]]:
+    oca_addons_by_category, other = _identify_oca_addons(other, odoo_series)
+    if oca_category == "repository":
+        for category, oca_addons in {
+            key: sorted(value) for key, value in sorted(oca_addons_by_category.items())
+        }.items():
+            categories[category] = oca_addons
+    else:
+        # oca category == 'basic'
+        categories[DEFAULT_OCA_CATEGORY] = sorted(
+            [oca_addon for oca_addons in oca_addons_by_category.values() for oca_addon in oca_addons]
+        )
+    return categories, other
+
+
+def do_sorting(addons_dir: Path, odoo_version: str, project_name: str, *, oca_category: str) -> None:
     """
     Update manifest files to sort dependencies by type, category and then by name.
 
@@ -121,10 +184,8 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str, *, oca_ca
             "Odoo Enterprise": odoo_ee,
         }
 
-        # Third party
         if oca_category:
-            oca, other = _identify_oca_addons(other, odoo_series)
-            categories["OCA"] = oca
+            categories, other = _add_oca_categories(categories, other, odoo_series, oca_category)
 
         categories["Third-party"] = other
 
@@ -135,7 +196,7 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str, *, oca_ca
         new_depends = _generate_depends_sections(categories)
 
         pattern = r'"depends":\s*\[([^]]*)\]'
-        content = sub(pattern, new_depends, content, flags=DOTALL)
+        content = re.sub(pattern, new_depends, content, flags=re.DOTALL)
         manifest_path.write_text(content)
 
 
@@ -163,8 +224,11 @@ def do_sorting(addons_dir: Path, odoo_version: str, project_name: str, *, oca_ca
 )
 @option(
     "--oca-category",
-    is_flag=True,
-    help="Add category for third party addons coming from OCA",
+    type=click.Choice(["basic", "repository"], case_sensitive=False),
+    help="Add category for third party addons coming from OCA. "
+    "If 'basic': category is set to 'OCA'. "
+    "If 'repository': category is set as 'OCA/<repository_name>', "
+    "if the repository can not be identified, it falls into the default 'OCA' category.",
 )
 @option(
     "--reset-cache",
@@ -175,11 +239,17 @@ def sort_manifest_deps(
     local_addons_dir: str,
     odoo_version: str,
     project_name: str,
+    oca_category: str,
     *,
-    oca_category: bool = False,
     reset_cache: bool = False,
 ) -> None:
     if reset_cache:
         other_addons_category_cache.clear()
+    elif other_addons_category_cache:
+        # Remove addons from cache that have 'oca_category_repo_not_found' as category
+        with other_addons_category_cache as cache:
+            # 'oca' is for retrocompatibility with cache created in versions < v1.4
+            cache.evict(DEFAULT_OCA_CATEGORY)
+            cache.evict("oca")
 
     do_sorting(Path(local_addons_dir), odoo_version, project_name, oca_category=oca_category)
