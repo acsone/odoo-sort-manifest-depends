@@ -63,8 +63,13 @@ def _identify_oca_addons(
                 distribution_name = addon_name_to_distribution_name(addon_name, odoo_series).replace("_", "-")
                 res = requests.head(f"{OCA_ADDONS_INDEX_URL}{distribution_name}", timeout=REQUEST_TIMEOUT)
                 if res:
-                    category = get_oca_repository_name(addon_name, odoo_series) or DEFAULT_OCA_CATEGORY
-                    cache_context[addon_name] = category
+                    category = get_oca_repository_name(addon_name, odoo_series)
+                    if category:
+                        cache_context[addon_name] = category
+                    else:
+                        # If module is found but not categories
+                        # keep it out of cache, it is probably a pending PR
+                        category = DEFAULT_OCA_CATEGORY
                 else:
                     category = "other"
 

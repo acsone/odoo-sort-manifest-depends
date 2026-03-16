@@ -51,7 +51,7 @@ def test_cache_oca_addon_with_repository(test_cache):
 
 
 def test_cache_oca_addon_without_repository(test_cache):
-    """Test that OCA addons without identifiable repository fall back to default OCA category"""
+    """Test that OCA addons without identifiable repository are NOT cached (pending PR case)"""
     addon_names = ["test_addon_no_repo"]
     odoo_series = OdooSeries("16.0")
 
@@ -71,9 +71,9 @@ def test_cache_oca_addon_without_repository(test_cache):
         assert "test_addon_no_repo" in oca_addons[DEFAULT_OCA_CATEGORY]
         assert "test_addon_no_repo" not in other_addons
 
-        # Should be cached with default OCA category
+        # Should NOT be cached (pending PR modules are not cached)
         with test_cache as cache:
-            assert cache.get("test_addon_no_repo") == DEFAULT_OCA_CATEGORY
+            assert cache.get("test_addon_no_repo") is None
 
 
 def test_cache_non_oca_addon(test_cache):
@@ -133,17 +133,17 @@ def test_cache_eviction(test_cache):
         patch("odoo_sort_manifest_depends.sort_manifest_deps.requests.head") as mock_head,
         patch("odoo_sort_manifest_depends.sort_manifest_deps.get_oca_repository_name") as mock_get_repo,
     ):
-        # Addon found in OCA wheelhouse but no repository identified
+        # Addon found in OCA wheelhouse WITH repository identified
         mock_head.return_value = MagicMock(status_code=200)
-        mock_get_repo.return_value = None
+        mock_get_repo.return_value = "OCA/server-tools"  # Has repository
 
         # First identification
         _identify_oca_addons(addon_names, odoo_series, cache=test_cache)
 
-        # Should be cached with default OCA
+        # Should be cached with repository category
         with test_cache as cache:
             cached_value = cache.get("test_addon_evict")
-            assert cached_value == DEFAULT_OCA_CATEGORY
+            assert cached_value == "OCA/server-tools"
 
         # Clear the cache to test eviction behavior
         test_cache.clear()
