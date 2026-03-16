@@ -50,19 +50,21 @@ def _get_addons_by_name(addons_dir: Path) -> dict[str, Addon]:
     return local_addons
 
 
-def _identify_oca_addons(addon_names: list[str], odoo_series: OdooSeries) -> tuple[dict[str, list[str]], list[str]]:
+def _identify_oca_addons(
+    addon_names: list[str], odoo_series: OdooSeries, cache: Cache = other_addons_category_cache
+) -> tuple[dict[str, list[str]], list[str]]:
     oca_addons_by_category, other_addons = {}, []
 
-    with other_addons_category_cache as cache:
+    with cache as cache_context:
         for addon_name in addon_names:
-            category = cache.get(addon_name)
+            category = cache_context.get(addon_name)
 
             if not category:
                 distribution_name = addon_name_to_distribution_name(addon_name, odoo_series).replace("_", "-")
                 res = requests.head(f"{OCA_ADDONS_INDEX_URL}{distribution_name}", timeout=REQUEST_TIMEOUT)
                 if res:
                     category = get_oca_repository_name(addon_name, odoo_series) or DEFAULT_OCA_CATEGORY
-                    cache[addon_name] = category
+                    cache_context[addon_name] = category
                 else:
                     category = "other"
 

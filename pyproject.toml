@@ -95,11 +95,12 @@ known-first-party = ["odoo_sort_manifest_deps"]
 source = "vcs"
 
 [tool.coverage.run]
-source_pkgs = ["odoo_sort_manifest_depends", "tests"]
+source_pkgs = ["odoo_sort_manifest_depends"]
 branch = true
 parallel = true
 omit = [
   "src/odoo_sort_manifest_depends/__about__.py",
+  "tests/*",
 ]
 
 [tool.coverage.paths]
@@ -112,3 +113,15 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.hatch.envs.default]
+dependencies = [
+  "pytest",
+  "pytest-cov",
+  "coverage",
+]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest tests/ -v"
+test-cov = "pytest --cov=odoo_sort_manifest_depends --cov-report=term-missing tests/"
+test-cov-xml = "pytest --cov=odoo_sort_manifest_depends --cov-report=xml tests/"

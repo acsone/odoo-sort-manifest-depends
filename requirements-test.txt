@@ -1,0 +1,5 @@
+# Test requirements
+-r requirements.txt
+pytest
+pytest-cov
+coverage
