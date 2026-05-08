@@ -1,5 +1,8 @@
 # odoo-sort-manifest-depends
 
+[![Test Status](https://github.com/acsone/odoo-sort-manifest-depends/actions/workflows/test.yml/badge.svg)](https://github.com/acsone/odoo-sort-manifest-depends/actions/workflows/test.yml)
+[![Code Coverage](https://img.shields.io/codecov/c/github/acsone/odoo-sort-manifest-depends)](https://codecov.io/gh/acsone/odoo-sort-manifest-depends)
+
 ## Table of Contents
 
 - [Help](#help)
@@ -21,7 +24,13 @@ Options:
   --odoo-version TEXT           Project's Odoo version (e.g. 16.0)  [required]
   --project-name TEXT           Name of the project, will be the name of
                                 category of local addons (default: Local)
-  --oca-category                Add category for third party addons coming from OCA
+  --oca-category [basic|repository]
+                                Add category for third party addons coming
+                                from OCA. If 'basic': category is set to
+                                'OCA'. If 'repository': category is set as
+                                'OCA/<repository_name>', if the repository
+                                can not be identified, it falls into the
+                                default 'OCA' category.
   --reset-cache                 Purge cache used to identify OCA addons
   --help                        Show this message and exit.
 ```
@@ -32,6 +41,28 @@ This project is distributed on PyPI. The recommended way to run it is with
 [pipx](https://github.com/pypa/pipx), with a command like this:
 
 `pipx run odoo-sort-manifest-depends --local-addons-dir=odoo/addons --odoo-version=16.0`
+
+## Running tests
+
+### Local development with Hatch
+
+```bash
+# Install hatch if you don't have it
+pip install hatch
+
+# Run tests
+hatch run test
+
+# Run tests with coverage
+hatch run test-cov
+```
+
+### Using pytest directly
+
+```bash
+pip install -r requirements-test.txt
+pytest tests/ -v
+```
 
 ## Using with pre-commit
 
