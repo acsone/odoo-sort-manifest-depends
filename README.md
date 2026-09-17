@@ -87,6 +87,7 @@ entry like this in `.pre-commit-config.yml`.
  * [Laurent Mignon](https://github.com/lmignon)
  * [Thomas Binsfeld](https://github.com/ThomasBinsfeld)
  * [Zina Rasoamanana](https://github.com/AnizR)
+ * [Yannick Payot](https://github.com/yvaucher)
 
 ## License
 
