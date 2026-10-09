@@ -10,9 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 keywords = []
-authors = [
-  { name = "Acsone"},
-]
+authors = [{ name = "Acsone" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
@@ -30,6 +28,7 @@ dependencies = [
   "platformdirs",
   "packaging",
   "mousebender",
+  "pyyaml",
 ]
 
 [project.urls]
@@ -76,9 +75,7 @@ select = [
   "W",
   "YTT",
 ]
-ignore = [
-  "S101",
-]
+ignore = ["S101"]
 unfixable = [
   # Don't touch unused imports
   "F401",
@@ -98,28 +95,20 @@ source = "vcs"
 source_pkgs = ["odoo_sort_manifest_depends"]
 branch = true
 parallel = true
-omit = [
-  "src/odoo_sort_manifest_depends/__about__.py",
-  "tests/*",
-]
+omit = ["src/odoo_sort_manifest_depends/__about__.py", "tests/*"]
 
 [tool.coverage.paths]
-odoo_sort_manifest_depends = ["src/odoo_sort_manifest_depends", "*/odoo-sort-manifest-depends/src/odoo_sort_manifest_depends"]
+odoo_sort_manifest_depends = [
+  "src/odoo_sort_manifest_depends",
+  "*/odoo-sort-manifest-depends/src/odoo_sort_manifest_depends",
+]
 tests = ["tests", "*/odoo-sort-manifest-depends/tests"]
 
 [tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
-]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
 [tool.hatch.envs.default]
-dependencies = [
-  "pytest",
-  "pytest-cov",
-  "coverage",
-]
+dependencies = ["pytest", "pytest-cov", "coverage"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest tests/ -v"

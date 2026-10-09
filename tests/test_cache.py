@@ -11,7 +11,7 @@ from diskcache import Cache
 from odoo_sort_manifest_depends.sort_manifest_deps import (
     DEFAULT_OCA_CATEGORY,
     OdooSeries,
-    _identify_oca_addons,
+    _identify_addons,
 )
 
 
@@ -38,7 +38,7 @@ def test_cache_oca_addon_with_repository(test_cache):
         # Mock: repository identified
         mock_get_repo.return_value = "OCA/server-tools"
 
-        oca_addons, other_addons = _identify_oca_addons(addon_names, odoo_series, cache=test_cache)
+        oca_addons, _, other_addons = _identify_addons(addon_names, odoo_series, cache=test_cache)
 
         # Should be categorized as OCA/server-tools
         assert "OCA/server-tools" in oca_addons
@@ -64,7 +64,7 @@ def test_cache_oca_addon_without_repository(test_cache):
         # Mock: repository NOT identified (returns None)
         mock_get_repo.return_value = None
 
-        oca_addons, other_addons = _identify_oca_addons(addon_names, odoo_series, cache=test_cache)
+        oca_addons, _, other_addons = _identify_addons(addon_names, odoo_series, cache=test_cache)
 
         # Should fall back to default OCA category
         assert DEFAULT_OCA_CATEGORY in oca_addons
@@ -85,7 +85,7 @@ def test_cache_non_oca_addon(test_cache):
         # Mock: addon NOT found in OCA wheelhouse
         mock_head.return_value = None
 
-        oca_addons, other_addons = _identify_oca_addons(addon_names, odoo_series, cache=test_cache)
+        oca_addons, _, other_addons = _identify_addons(addon_names, odoo_series, cache=test_cache)
 
         # Should be in other_addons
         assert "test_non_oca" in other_addons
@@ -109,14 +109,14 @@ def test_cache_reuse(test_cache):
         mock_head.return_value = MagicMock(status_code=200)
         mock_get_repo.return_value = "OCA/server-tools"
 
-        oca_addons1, _ = _identify_oca_addons(addon_names, odoo_series, cache=test_cache)
+        oca_addons1, _, _ = _identify_addons(addon_names, odoo_series, cache=test_cache)
         assert "OCA/server-tools" in oca_addons1
 
         # Second call: mock should not be called again (cached)
         mock_head.reset_mock()
         mock_get_repo.reset_mock()
 
-        oca_addons2, _ = _identify_oca_addons(addon_names, odoo_series, cache=test_cache)
+        oca_addons2, _, _ = _identify_addons(addon_names, odoo_series, cache=test_cache)
 
         # Should use cached value
         assert "OCA/server-tools" in oca_addons2
@@ -138,7 +138,7 @@ def test_cache_eviction(test_cache):
         mock_get_repo.return_value = "OCA/server-tools"  # Has repository
 
         # First identification
-        _identify_oca_addons(addon_names, odoo_series, cache=test_cache)
+        _identify_addons(addon_names, odoo_series, cache=test_cache)
 
         # Should be cached with repository category
         with test_cache as cache:

@@ -11,3 +11,4 @@ platformdirs==4.10.0
 requests==2.34.2
 typing-extensions==4.15.0
 urllib3==2.7.0
+pyyaml==6.0.3
